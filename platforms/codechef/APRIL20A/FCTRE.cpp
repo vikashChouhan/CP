@@ -26,74 +26,98 @@ T GCD(T a, T b)
 {T temp;while(b>0){temp = b;b = a%b;a = temp;}
 return a;}
 
-#define MAX 1000002
-unordered_map<LI,LI>factors[MAX+1];
-int vis[100002];
-void preprocess()
+#define vpi VEC(PAIR(LI,LI))
+#define MAX2 1000001
+#define MAX 100001
+
+LI spf[MAX2];
+VEC(LI) path;
+LI height[MAX], entry[MAX], parent[MAX];
+LI tree[4*MAX];
+
+void sieve()
 {
-	
-	for(LI i=2; i<=MAX; i++)
+	spf[1] = 1;
+	for(LI i=2; i<MAX2; i++)
 	{
-		LI temp = i;
-		while(!(temp&1)) 
+		if(spf[i]==0)
 		{
-			factors[i][2]++;
-			temp/=2;
+			spf[i] = i;
+			for(LI j=2*i; j<MAX2; j+=i)
+				spf[j] = i;
 		}
-		for(LI j=3; j*j<=temp; j+=2)
-		{
-			while(temp%j==0)
-			{
-				factors[i][j]++;
-				temp/=j;
-			}
-		}
-		if(temp>2) factors[i][temp]++;
 	}
 }
 
-
-int dfs(VEC(LI) *graph, LI u, LI dest, VEC(LI) &A, unordered_map<LI,LI>&f)
+void dfs(VEC(LI) *graph, LI u, LI h,VEC(LI) &arr, unordered_map<LI,LI>* factors)
 {
-	if(u == dest) return 1;
+	entry[u] = path.size();
+	path.emplace_back(u);
+	height[u] = h;
 	
-	vis[u] = 1;
-	for(auto &v: graph[u])
+	for(auto &x: graph[u])
 	{
-		if(!vis[v])
+		if(x == parent[u]) continue;
+		factors[x] = factors[u];
+		LI temp = arr[x];
+		while(temp!=1)
 		{
-			if(dfs(graph, v, dest, A, f))
-			{
-//				cout << u << " ";
-				if(f.empty())
-					f = factors[A[v]];
-				else if(A[v]!=1)
-				{
-					for(auto &x: factors[A[v]])
-						if(f.find(x.first)!=f.end())
-							f[x.first] += x.second;
-						else
-							f[x.first] = x.second;
-				}
-				return 1;
-			}
+			factors[x][spf[temp]]++;
+			temp/=spf[temp];
 		}
+		
+		parent[x] = u;
+		dfs(graph, x, h+1, arr, factors);
+		path.emplace_back(u);
 	}
-	
-	return 0;
 }
+
+void build(LI i, LI s, LI e)
+{
+	if(s==e) tree[i] = path[s];
+	else
+	{
+		LI m = (s+e)/2;
+		build(2*i, s, m);
+		build(2*i+1, m+1, e);
+		if(height[tree[2*i]] < height[tree[2*i+1]])
+			tree[i] = tree[i*2];
+		else
+			tree[i] = tree[2*i+1];
+	}
+}
+
+LI query(LI i, LI s, LI e, LI l, LI r)
+{
+	if(s>e || e<l) return -1;
+	if(s==l && e==r)
+		return tree[i];
+	
+	LI m = (s+e)/2;
+	if(r<=m) return query(2*i, s, m, l, r);
+	else if(l>m) return query(2*i+1, m+1, e, l, r);
+	else
+	{
+		LI left = query(2*i, s, m, l, m);
+		LI right = query(2*i+1, m+1, e, m+1, r);
+		if(height[left]<height[right])
+			return left;
+		else
+			return right;
+	}
+}
+
 int main()
 {
 	ios_base::sync_with_stdio(false);
 	cin.tie(NULL);cout.tie(NULL);
 
+	sieve();
 	int t;
 	cin >> t;
-	preprocess();
 	while(t--)
 	{
-		LI N;
-		cin >> N;
+		LI N; cin >> N;
 		
 		VEC(LI) graph[N+1];
 		LI u,v;
@@ -104,38 +128,89 @@ int main()
 			graph[v].push_back(u);
 		}
 		
-		VEC(LI) A(N+1);
-		for(LI i=1; i<=N; i++) cin >> A[i];
+		VEC(LI) arr(N+1);
+		for(LI i=1; i<=N; i++) cin >> arr[i];
 		
-		LI Q;
-		cin >> Q;
-		unordered_map<LI,LI> f;
-		while(Q--) 
+		unordered_map<LI,LI> factors[N+1];
+		
+		path.clear();
+		memset(height,-1,sizeof height);
+		memset(entry,-1,sizeof entry);
+		memset(parent,0,sizeof parent);
+		
+		LI temp = arr[1];
+		while(temp!=1)
+		{
+			factors[1][spf[temp]]++;
+			temp/=spf[temp];
+		}
+		dfs(graph,1,0,arr,factors);
+		build(1, 0, path.size()-1);
+		
+		
+		LI q;
+		cin >> q;
+		while(q--)
 		{
 			cin >> u >> v;
-			memset(vis,0,sizeof(vis));
-			f.clear();
-			dfs(graph,u,v,A,f);
-//			cout << endl;
-			LI ans = 1;
-			for(auto &x: factors[A[u]])
-				if(f.find(x.first)!=f.end())
-					f[x.first] += x.second;
-				else
-					f[x.first] = x.second;
-			
-//			cout <<endl;	
-			for(auto &x: f)
+			if(entry[u]>entry[v])
 			{
-				ans = (ans%MOD * (x.second+1)%MOD)%MOD;
-//				cout << x.first << " ";			
+				LI temp = u;
+				u = v;
+				v = temp;
 			}
-//			cout << endl;
-			cout << ans <<"\n";
+			
+			LI lca;
+//			cout << "lca="<<lca << endl;
+			unordered_map<LI,LI> res;
+			
+			if(u==v)
+			{
+				for(auto &x: factors[u])
+					res[x.first] = x.second-factors[parent[u]][x.first];
+			}
+			else
+			{
+				lca = query(1, 0, path.size()-1, entry[u], entry[v]);
+				if(lca == u)
+				{
+					res = factors[v];
+					for(auto &x: factors[parent[u]])
+						res[x.first]-= x.second;
+				}
+				else
+				{
+					res = factors[u];
+					for(auto &x: factors[v])
+						res[x.first]+=x.second;
+					for(auto &x: factors[lca])
+						res[x.first] -= 2*x.second;
+					LI temp = arr[lca];
+					while(temp!=1)
+					{
+					    res[spf[temp]]++;
+					    temp/=spf[temp];
+					}
+				}
+			}
+			
+			LI ans = 1;
+			for(auto &x: res)
+			{
+				ans = (ans * (x.second+1))%MOD;
+		    }
+			cout << ans << "\n";
 		}
 		
+//		for(LI i=1; i<=N; i++)
+//		{
+//			cout << "\ni="<<i<<endl;
+//			for(auto &x: factors[i])
+//				cout << "("<<x.first<<","<<x.second<<"), ";
+//			cout << "\n";
+//		}
 	}
-
+	
 	return 0;
 }
 
