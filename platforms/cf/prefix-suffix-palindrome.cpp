@@ -26,24 +26,55 @@ T GCD(T a, T b)
 {T temp;while(b>0){temp = b;b = a%b;a = temp;}
 return a;}
 
-string getpalin(string s) {
-	for(int j=s.length()-1; j>=0; j--) {
-		if(s[0]==s[j]) {
-			int f=1,l=j-1;
-			while(f<l && s[f]==s[l]) {
-				f++;l--;
-			}
-			if(s[f]==s[l])
-				return s.substr(0,j+1);
+
+inline void getpalin(string &s, int start, int end, string &res)
+{
+	vector<int>d1(end-start+1),d2(end-start+1);
+	int n = end-start+1;
+	for(int i=0, l=0, r=-1; i<n; i++)
+	{
+		int k = (i>r)?1: min(d1[l+r-i], r-i+1);
+		while(0<=i-k && i+k<n && s[i-k + start]==s[i+k + start])
+			k++;
+		d1[i] = k--;
+		if(i+k>r)
+		{
+			l=i-k;
+			r = i+k;
 		}
 	}
-	return s.substr(0,1);
-}
-string rev(string s) {
-	string t;
-	for(int i=s.length()-1; i>=0; i--)
-		t+=s[i];
-	return t;
+	for(int i=0, l=0, r=-1; i<n; i++)
+	{
+		int k = (i>r)?0: min(d2[l+r-i-1], r-i+1);
+		while(0<=i-k-1 && i+k<n && s[i-k-1 + start]==s[i+k + start])
+			k++;
+		d2[i]=k--;
+		if(i+k>r)
+		{
+			l = i-k-1;
+			r = i+k;
+		}
+	}
+//	cout << d1 << d2;
+	
+	int len1=0,len2=0;
+	for(int i=1; i<=end-start+1; i++)
+	{
+		if(d1[i-1]==i)
+			len1 = max(len1,2*d1[i-1]-1);
+		if(d2[i-1]==i)
+			len1 = max(len1,2*d2[i-1]);
+		
+		if(d1[i-1]-1==n-i)
+			len2 = max(len2,2*d1[i-1]-1);
+		if(d2[i-1]-1==n-i)
+			len2 = max(len2,2*d2[i-1]);
+	}
+//	cout << len1 << " , " << len2<<endl;
+	if(len1 > len2)
+		res = s.substr(start, len1);
+	else
+		res = s.substr(end-len2+1,len2);
 }
 int main()
 {
@@ -51,36 +82,32 @@ int main()
 	//cin.tie(NULL);cout.tie(NULL);
 
 	int t; cin >> t;
-	while(t--) {
+	while(t--)
+	{
 		string s;
 		cin >> s;
-		if(s.length()==1) {
+		
+		string a, b;
+		int i=0, j=s.length()-1;
+		while(s[i]==s[j] && i<=j)
+		{
+			i++; j--;
+		}
+		if(i>j)
 			cout << s << "\n";
-			continue;
-		}
-		int f=0,l=s.length()-1;
-		while(f<l && s[f]==s[l]) {
-			f++;l--;
-		}
-		string a = s.substr(0,f);
-		string b = s.substr(l+1);
-//		cout << "f="<<f<<" l="<<l<<endl;
-		string ls = getpalin(s.substr(f));
-		string temp = rev(s.substr(0,l+1));
-//		cout << "temp="<<temp<<endl;
-		string rs = rev(getpalin(temp));
-		
-		
-//		cout << "a="<<a<<endl;
-//		cout << "b="<<b<<endl;
-//		cout << "ls=" << ls<<endl;
-//		cout << "rs="<<rs<<endl;
-		if(s[f]==s[l])
-			cout << a+b << "\n";
-		else if(ls.length()>=rs.length())
-			cout << a+ls+b << "\n";
 		else
-			cout << a+rs+b << "\n";
+		{
+			a = s.substr(0,i);
+			b = s.substr(j+1);
+			
+//			cout << a << "->" << b <<"\n";
+			string c;
+			getpalin(s, i, j, c);
+//			cout << c << "\n";
+			
+			cout << a + c + b <<"\n";
+		}
+		
 	}
 
 	return 0;
