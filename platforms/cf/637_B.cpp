@@ -57,7 +57,7 @@ int main()
 			}
 			else
 				cnt += temp[i] - temp[i-k+2];
-		cout << maxcnt+1 << " " << l+1 << "\n";
+		cout << maxcnt+1 << " " << l+1 << endl;
 	}
 
 	return 0;
