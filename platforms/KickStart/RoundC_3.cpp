@@ -1,30 +1,34 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-#define ll long long
-
-vector<ll>pfsq;
-void init()
-{
-    for(ll i=0; i*i<=10000000; i++)
-        pfsq.emplace_back(i*i);
-}
-
-ll countSum(int *a, int n)
+int mm[2*100*100000+1];
+long int countSum(int *a, int n)
 {
     
-    ll currsum = 0, res=0;
-    unordered_map<ll,ll>mm;
+    long long currsum = 0, res=0;
+    long long mxpos=0,mxneg=0;
+    
+    for(int i=0; i<n; i++)
+        if(a[i]>0)
+            mxpos+=a[i];
+        else 
+            mxneg+=abs(a[i]);
+    
+    
+    memset(mm,0,sizeof mm);
+    mm[mxneg]++;
     for(int i=0; i<n; i++)
     {
         currsum+=a[i];
         
-        for(ll sum: pfsq)
+        for(int j=0; j*j<=mxpos; j++)
         {
-			res+=mm[currsum-sum];
-			if(currsum==sum) res++;
+            if(mxneg+currsum-j*j>=0)
+                res+=mm[mxneg+currsum-j*j];
+                
+        	
 		}
-        mm[currsum]++;
+        mm[mxneg+currsum]++;
     }
     return res;
 }
@@ -36,18 +40,21 @@ int main()
     int T;
     cin >> T;
     
-    init();
     for(int test=1; test<=T; test++)
     {
         int n;
         cin >> n;
         int a[n];
-        
+        long int maxno=INT_MIN;
         for(int i=0; i<n; i++)
+		{
 			cin >> a[i];
-		
+		}
         
-        ll ans = countSum(a,n);
+        long long ans = 0;
+        ans = countSum(a,n);
+            
+        
         cout << "Case #"<<test<<": "<<ans<<"\n";
     }
 
